@@ -1,0 +1,118 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+using namespace std;
+
+struct Student {
+    int roll;
+    char name[30];
+    char div[10];
+    char addr[50];
+};
+
+void add() {
+    ofstream f("Comp_B.dat", ios::app | ios::binary);
+    Student s;
+    cout << "Enter Roll no., Name, Division, Address: ";
+    cin >> s.roll >> s.name >> s.div >> s.addr;
+    f.write(reinterpret_cast<char*>(&s), sizeof(s));
+    f.close();
+}
+
+void display() {
+    ifstream f("Comp_B.dat", ios::binary);
+    Student s;
+    cout << "Roll No. | Name | Division | Address\n";
+    cout << "--------------------------------------\n";
+    while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        cout << s.roll << " | " << s.name << " | " << s.div << " | " << s.addr << endl;
+    }
+    f.close();
+}
+
+void search() {
+    ifstream f("Comp_B.dat", ios::binary);
+    Student s;
+    int r;
+    cout << "Enter Roll no. to search: ";
+    cin >> r;
+    bool found = false;
+    while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.roll == r) {
+            cout << "Found: " << s.roll << " " << s.name << " " << s.div << " " << s.addr << endl;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        cout << "Not found\n";
+    }
+    f.close();
+}
+
+void update() {
+    fstream f("Comp_B.dat", ios::in | ios::out | ios::binary);
+    Student s;
+    int r;
+    cout << "Enter Roll no. to update: ";
+    cin >> r;
+    bool found = false;
+    while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.roll == r) {
+            cout << "Enter new Name, Division, Address: ";
+            cin >> s.name >> s.div >> s.addr;
+            f.seekp(-static_cast<int>(sizeof(s)), ios::cur);
+            f.write(reinterpret_cast<char*>(&s), sizeof(s));
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        cout << "Record not found.\n";
+    }
+    f.close();
+}
+
+void deleteRecord() {
+    ifstream f("Comp_B.dat", ios::binary);
+    ofstream temp("Temp.dat", ios::binary);
+    Student s;
+    int r;
+    cout << "Enter Roll no. to delete: ";
+    cin >> r;
+    bool found = false;
+    while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.roll != r) {
+            temp.write(reinterpret_cast<char*>(&s), sizeof(s));
+        } else {
+            found = true;
+        }
+    }
+    f.close();
+    temp.close();
+    remove("Comp_B.dat");
+    rename("Temp.dat", "Comp_B.dat");
+    if (found) {
+        cout << "Record deleted successfully.\n";
+    } else {
+        cout << "Record not found.\n";
+    }
+}
+
+int main() {
+    int choice;
+    while (true) {
+        cout << "\n1. Add Student\n2. Display All Students\n3. Search Student\n4. Update Student\n5. Delete Student\n6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+        switch (choice) {
+            case 1: add(); break;
+            case 2: display(); break;
+            case 3: search(); break;
+            case 4: update(); break;
+            case 5: deleteRecord(); break;
+            case 6: return 0;
+            default: cout << "Invalid choice.\n";
+        }
+    }
+}
