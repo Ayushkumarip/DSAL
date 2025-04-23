@@ -10,109 +10,174 @@ struct Student {
     char addr[50];
 };
 
-void add() {
-    ofstream f("Comp_B.dat", ios::app | ios::binary);
-    Student s;
-    cout << "Enter Roll no., Name, Division, Address: ";
-    cin >> s.roll >> s.name >> s.div >> s.addr;
-    f.write(reinterpret_cast<char*>(&s), sizeof(s));
-    f.close();
-}
+const char* FILENAME = "StudentDB.dat";
 
-void display() {
-    ifstream f("Comp_B.dat", ios::binary);
-    Student s;
-    cout << "Roll No. | Name | Division | Address\n";
-    cout << "--------------------------------------\n";
-    while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
-        cout << s.roll << " | " << s.name << " | " << s.div << " | " << s.addr << endl;
+void addStudent() {
+    ofstream f(FILENAME, ios::app | ios::binary);
+    if (!f) {
+        cerr << "Error opening file!\n";
+        return;
     }
-    f.close();
+
+    Student s;
+    cout << "Enter student details:\n";
+    cout << "Roll No: "; cin >> s.roll;
+    cout << "Name: "; cin.ignore(); cin.getline(s.name, 30);
+    cout << "Division: "; cin.getline(s.div, 10);
+    cout << "Address: "; cin.getline(s.addr, 50);
+
+    f.write(reinterpret_cast<char*>(&s), sizeof(s));
+    cout << "Student added successfully!\n";
 }
 
-void search() {
-    ifstream f("Comp_B.dat", ios::binary);
+void displayAll() {
+    ifstream f(FILENAME, ios::binary);
+    if (!f) {
+        cerr << "No records found!\n";
+        return;
+    }
+
     Student s;
-    int r;
-    cout << "Enter Roll no. to search: ";
-    cin >> r;
+    cout << "\nStudent Records:\n";
+    cout << "------------------------------------------------------------\n";
+    cout << "Roll No\tName\t\tDivision\tAddress\n";
+    cout << "------------------------------------------------------------\n";
+
+    while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        cout << s.roll << "\t" << s.name << "\t" << s.div << "\t\t" << s.addr << endl;
+    }
+}
+
+void searchStudent() {
+    ifstream f(FILENAME, ios::binary);
+    if (!f) {
+        cerr << "No records found!\n";
+        return;
+    }
+
+    int roll;
+    cout << "Enter Roll No to search: ";
+    cin >> roll;
+
+    Student s;
     bool found = false;
     while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
-        if (s.roll == r) {
-            cout << "Found: " << s.roll << " " << s.name << " " << s.div << " " << s.addr << endl;
+        if (s.roll == roll) {
+            cout << "\nRecord Found:\n";
+            cout << "Roll No: " << s.roll << endl;
+            cout << "Name: " << s.name << endl;
+            cout << "Division: " << s.div << endl;
+            cout << "Address: " << s.addr << endl;
             found = true;
             break;
         }
     }
+
     if (!found) {
-        cout << "Not found\n";
+        cout << "Record not found!\n";
     }
-    f.close();
 }
 
-void update() {
-    fstream f("Comp_B.dat", ios::in | ios::out | ios::binary);
+void updateStudent() {
+    fstream f(FILENAME, ios::in | ios::out | ios::binary);
+    if (!f) {
+        cerr << "No records found!\n";
+        return;
+    }
+
+    int roll;
+    cout << "Enter Roll No to update: ";
+    cin >> roll;
+
     Student s;
-    int r;
-    cout << "Enter Roll no. to update: ";
-    cin >> r;
     bool found = false;
     while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
-        if (s.roll == r) {
-            cout << "Enter new Name, Division, Address: ";
-            cin >> s.name >> s.div >> s.addr;
+        if (s.roll == roll) {
+            cout << "\nCurrent Details:\n";
+            cout << "Name: " << s.name << endl;
+            cout << "Division: " << s.div << endl;
+            cout << "Address: " << s.addr << endl;
+
+            cout << "\nEnter new details:\n";
+            cout << "Name: "; cin.ignore(); cin.getline(s.name, 30);
+            cout << "Division: "; cin.getline(s.div, 10);
+            cout << "Address: "; cin.getline(s.addr, 50);
+
             f.seekp(-static_cast<int>(sizeof(s)), ios::cur);
             f.write(reinterpret_cast<char*>(&s), sizeof(s));
+            cout << "Record updated successfully!\n";
             found = true;
             break;
         }
     }
+
     if (!found) {
-        cout << "Record not found.\n";
+        cout << "Record not found!\n";
     }
-    f.close();
 }
 
-void deleteRecord() {
-    ifstream f("Comp_B.dat", ios::binary);
-    ofstream temp("Temp.dat", ios::binary);
+void deleteStudent() {
+    ifstream inFile(FILENAME, ios::binary);
+    if (!inFile) {
+        cerr << "No records found!\n";
+        return;
+    }
+
+    ofstream temp("temp.dat", ios::binary);
+    int roll;
+    cout << "Enter Roll No to delete: ";
+    cin >> roll;
+
     Student s;
-    int r;
-    cout << "Enter Roll no. to delete: ";
-    cin >> r;
     bool found = false;
-    while (f.read(reinterpret_cast<char*>(&s), sizeof(s))) {
-        if (s.roll != r) {
+    while (inFile.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.roll != roll) {
             temp.write(reinterpret_cast<char*>(&s), sizeof(s));
         } else {
             found = true;
         }
     }
-    f.close();
+
+    inFile.close();
     temp.close();
-    remove("Comp_B.dat");
-    rename("Temp.dat", "Comp_B.dat");
+
+    remove(FILENAME);
+    rename("temp.dat", FILENAME);
+
     if (found) {
-        cout << "Record deleted successfully.\n";
+        cout << "Record deleted successfully!\n";
     } else {
-        cout << "Record not found.\n";
+        cout << "Record not found!\n";
     }
+}
+
+void showMenu() {
+    cout << "\nStudent Database Management System\n";
+    cout << "1. Add Student\n";
+    cout << "2. Display All Students\n";
+    cout << "3. Search Student\n";
+    cout << "4. Update Student\n";
+    cout << "5. Delete Student\n";
+    cout << "6. Exit\n";
+    cout << "Enter your choice: ";
 }
 
 int main() {
     int choice;
-    while (true) {
-        cout << "\n1. Add Student\n2. Display All Students\n3. Search Student\n4. Update Student\n5. Delete Student\n6. Exit\n";
-        cout << "Enter your choice: ";
+    do {
+        showMenu();
         cin >> choice;
+
         switch (choice) {
-            case 1: add(); break;
-            case 2: display(); break;
-            case 3: search(); break;
-            case 4: update(); break;
-            case 5: deleteRecord(); break;
-            case 6: return 0;
-            default: cout << "Invalid choice.\n";
+            case 1: addStudent(); break;
+            case 2: displayAll(); break;
+            case 3: searchStudent(); break;
+            case 4: updateStudent(); break;
+            case 5: deleteStudent(); break;
+            case 6: cout << "Exiting program...\n"; break;
+            default: cout << "Invalid choice! Try again.\n";
         }
-    }
+    } while (choice != 6);
+
+    return 0;
 }
